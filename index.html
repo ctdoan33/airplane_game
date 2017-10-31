@@ -29,7 +29,7 @@
 		<img src="airplane.gif" id="my_plane" style="position:absolute; top:300px; left:200px;" />
 	</div>
 
-	Use the arrows to move the airplane and space bar to shoot.  No collission system built yet but you can make the game a lot better.  The codes were built quickly and need quite a bit of refactoring.
+	Use the arrows to move the airplane and space bar to shoot.
 
 	<script type="text/javascript">
 
@@ -40,8 +40,11 @@
 		var airplane = new MyAirplane();
 		var bullets = [];
 		var bullets_total = 0;
+		var enemy_bullets = [];
+		var enemy_bullets_total = 0;
 		var keyPressed = [];
 		var enemies = [];
+		var fire_timer = 0;
 		//create two enemies
 
 		this.createNewEnemy = function()
@@ -60,10 +63,47 @@
 		this.loop = function()
 		{
 			airplane.draw();
-
+			fire_timer++;
 			for(var i=0; i<bullets.length; i++)
 			{
 				bullets[i].moveUp();
+				var b_pos = bullets[i].position;
+				if(b_pos.y < 0){
+					$('#bullet'+bullets[i].bullet_html_id).remove();
+					bullets.splice(i, 1);
+				}
+				for(var m=0; m<enemies.length; m++){
+					e_pos = enemies[m].position;
+					if(Math.abs(b_pos.x-e_pos.x-40)<40 && Math.abs(b_pos.y-e_pos.y-24)<24){
+						$('#bullet'+bullets[i].bullet_html_id).remove();
+						bullets.splice(i, 1);
+						$('#enemy'+enemies[m].plane_html_id).remove();
+						enemies.splice(m, 1);
+					}
+				}
+			}
+
+			for(var j=0; j<enemies.length; j++){
+				enemies[j].position.y+=1;
+				if(enemies[j].position.y>335){
+					enemies[j].position = {x:parseInt(Math.random()*6)*80, y:0}
+				}
+				enemies[j].draw();
+			}
+
+			for(var k=0; k<enemy_bullets.length; k++){
+				enemy_bullets[k].moveDown();
+				if(enemy_bullets[k].position.y > 390){
+					$('#enemy_bullet'+enemy_bullets[k].bullet_html_id).remove();
+					enemy_bullets.splice(k, 1);
+				}
+			}
+
+			if(fire_timer>=20 && enemies.length){
+				var enemy_position = enemies[parseInt(Math.random()*enemies.length)].position;
+				var bullet = new EnemyBullet({x: enemy_position.x+36, y: enemy_position.y+48}, enemy_bullets_total++)
+				enemy_bullets.push(bullet);
+				fire_timer=0;
 			}
 		}
 
@@ -101,13 +141,13 @@
 		}
 		this.performAction = function(action)
 		{
-			if(action == "MOVE_LEFT")
+			if(action == "MOVE_LEFT" && this.position.x > 0)
 				this.position.x -= 10;
-			else if(action == 'MOVE_RIGHT')
+			else if(action == 'MOVE_RIGHT' && this.position.x < 420)
 				this.position.x += 10;
-			else if(action == 'MOVE_UP')
+			else if(action == 'MOVE_UP' && this.position.y > 0)
 				this.position.y -= 10;
-			else if(action == 'MOVE_DOWN')
+			else if(action == 'MOVE_DOWN' && this.position.y < 330)
 				this.position.y += 10;
 		}
 	}
@@ -157,8 +197,32 @@
 
 	}
 
-	var engine = new GameEngine();
+	function EnemyBullet(initial_coordinates, id)
+	{
+		this.position = {x:initial_coordinates.x, y:initial_coordinates.y};
+		this.bullet_html_id = id;
 
+		this.initialize = function()
+		{
+			$('#canvas').append('<div class="bullet" id="enemy_bullet'+this.bullet_html_id+'"></div>'); //create the bullet
+			this.draw();	//update the coordinates
+		}
+
+		this.draw = function()
+		{
+			$('#enemy_bullet'+this.bullet_html_id).css({top: this.position.y+"px", left: this.position.x+"px" });
+		}
+
+		this.moveDown = function()
+		{
+			this.position.y += 5;
+			this.draw();
+		}
+
+		this.initialize();
+	}
+
+	var engine = new GameEngine();
 
 	</script>
 
